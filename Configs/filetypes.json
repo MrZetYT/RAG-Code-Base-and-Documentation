@@ -1,0 +1,50 @@
+{
+  "Code": {
+    ".cs": "CSharp",
+    ".java": "Java",
+    ".py": "Python",
+    ".js": "JavaScript",
+    ".ts": "TypeScript",
+    ".cpp": "C++",
+    ".c": "C",
+    ".hpp": "C++",
+    ".go": "Go",
+    ".rs": "Rust",
+    ".php": "PHP",
+    ".swift": "Swift",
+    ".m": "ObjectiveC"
+  },
+  "Web": {
+    ".html": "HTML",
+    ".css": "CSS",
+    ".scss": "CSS",
+    ".vue": "Vue",
+    ".svelte": "Svelte"
+  },
+  "Data": {
+    ".sql": "SQL",
+    ".csv": "CSV",
+    ".json": "JSON",
+    ".yaml": "YAML",
+    ".yml": "YAML"
+  },
+  "Docs": {
+    ".pdf": "PDF",
+    ".docx": "DOCX",
+    ".md": "Markdown",
+    ".txt": "Text",
+    ".rtf": "Text"
+  },
+  "Config": {
+    ".toml": "Config",
+    ".ini": "Config",
+    ".env": "Config",
+    ".tf": "Terraform",
+    ".dockerfile": "Dockerfile"
+  },
+  "Scripts": {
+    ".sh": "Shell",
+    ".ps1": "PowerShell",
+    ".bat": "Batch"
+  }
+}

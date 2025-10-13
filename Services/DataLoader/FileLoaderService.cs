@@ -5,7 +5,7 @@ namespace RAG_Code_Base.Services.DataLoader
     public class FileLoaderService
     {
         private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-
+        private readonly FileTypeResolver _typeResolver = new(); 
         public FileLoaderService()
         {
             if (!Directory.Exists(_storagePath))
@@ -24,23 +24,10 @@ namespace RAG_Code_Base.Services.DataLoader
             {
                 FileName = file.FileName,
                 FilePath = filePath,
-                FileType = GetFileType(file.FileName)
+                FileType = _typeResolver.GetFileType(file.FileName),
             };
 
             return fileItem;
-        }
-
-        private string GetFileType(string fileName)
-        {
-            var ext = Path.GetExtension(fileName).ToLower();
-            return ext switch
-            {
-                ".cs" => "CSharp",
-                ".pdf" => "PDF",
-                ".docx" => "DOCX",
-                ".md" => "Markdown",
-                _ => "Unknown"
-            };
         }
     }
 }
