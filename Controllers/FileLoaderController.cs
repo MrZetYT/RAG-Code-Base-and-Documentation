@@ -30,5 +30,13 @@ namespace RAG_Code_Base.Controllers
             var gotFiles = _fileLoaderService.GetAllFiles();
             return Ok(gotFiles);
         }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeleteFile(Guid id)
+        {
+            var deletedFile = _fileLoaderService.DeleteFile(id);
+            if (!deletedFile) return NotFound("Файл не найден.");
+            return NoContent();
+        }
     }
 }

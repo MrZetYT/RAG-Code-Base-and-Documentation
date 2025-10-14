@@ -40,5 +40,26 @@ namespace RAG_Code_Base.Services.DataLoader
         {
             return _applicationDbContext.FileItems.ToList();
         }
+
+        public bool DeleteFile(Guid id)
+        {
+            var fileItem = _applicationDbContext.FileItems.FirstOrDefault(f=>f.Id== id);
+
+            if (fileItem == null)
+            {
+                return false;
+            }
+
+            if (File.Exists(fileItem.FilePath))
+            {
+                File.Delete(fileItem.FilePath);
+            }
+
+            _applicationDbContext.FileItems.Remove(fileItem);
+            _applicationDbContext.SaveChanges();
+
+
+            return true;
+        }
     }
 }
