@@ -1,13 +1,16 @@
-﻿using RAG_Code_Base.Models;
+﻿using RAG_Code_Base.Database;
+using RAG_Code_Base.Models;
 
 namespace RAG_Code_Base.Services.DataLoader
 {
     public class FileLoaderService
     {
         private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-        private readonly FileTypeResolver _typeResolver = new(); 
-        public FileLoaderService()
+        private readonly FileTypeResolver _typeResolver = new();
+        private readonly ApplicationDbContext _applicationDbContext;
+        public FileLoaderService(ApplicationDbContext applicationDbContext)
         {
+            _applicationDbContext = applicationDbContext;
             if (!Directory.Exists(_storagePath))
                 Directory.CreateDirectory(_storagePath);
         }
@@ -26,6 +29,9 @@ namespace RAG_Code_Base.Services.DataLoader
                 FilePath = filePath,
                 FileType = _typeResolver.GetFileType(file.FileName),
             };
+
+            _applicationDbContext.FileItems.Add(fileItem);
+            _applicationDbContext.SaveChanges();
 
             return fileItem;
         }

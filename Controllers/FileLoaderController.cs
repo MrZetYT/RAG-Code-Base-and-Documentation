@@ -9,9 +9,9 @@ namespace RAG_Code_Base.Controllers
     {
         private readonly FileLoaderService _fileLoaderService;
 
-        public FileLoaderController()
+        public FileLoaderController(FileLoaderService fileLoaderService)
         {
-            _fileLoaderService = new FileLoaderService();
+            _fileLoaderService = fileLoaderService;
         }
 
         [HttpPost("upload")]
