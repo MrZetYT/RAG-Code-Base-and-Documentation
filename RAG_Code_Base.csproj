@@ -21,8 +21,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
     <Folder Include="Configs\" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="**/Data/**" />
+		<None Remove="**/Data/**" />
+	</ItemGroup>
+	
+  <ItemGroup>
+		<None Include="Data\**" CopyToOutputDirectory="Never" />
   </ItemGroup>
 
 </Project>

@@ -35,5 +35,10 @@ namespace RAG_Code_Base.Services.DataLoader
 
             return fileItem;
         }
+
+        public List<FileItem> GetAllFiles()
+        {
+            return _applicationDbContext.FileItems.ToList();
+        }
     }
 }

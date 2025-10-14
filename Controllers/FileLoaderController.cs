@@ -23,5 +23,12 @@ namespace RAG_Code_Base.Controllers
             var savedFile = _fileLoaderService.SaveFile(file);
             return Ok(savedFile);
         }
+
+        [HttpGet("")]
+        public IActionResult GetFilesList()
+        {
+            var gotFiles = _fileLoaderService.GetAllFiles();
+            return Ok(gotFiles);
+        }
     }
 }
