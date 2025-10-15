@@ -11,5 +11,6 @@ namespace RAG_Code_Base.Database
         }
 
         public DbSet<FileItem> FileItems { get; set; }
+        public DbSet<InfoBlock> InfoBlocks { get; set; }
     }
 }

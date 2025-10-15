@@ -7,5 +7,6 @@
         public string FilePath { get; set; }
         public string FileType { get; set; }
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public List<InfoBlock> InfoBlocks { get; set; } = new();
     }
 }
