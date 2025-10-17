@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
+using RAG_Code_Base.Services.Parsers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,9 +10,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options=>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<FileLoaderService>();
+builder.Services.AddScoped<TextFileParser>();
 // Add services to the container.
+builder.Services.AddScoped<ParserFactory>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

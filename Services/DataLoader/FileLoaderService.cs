@@ -1,5 +1,6 @@
 ﻿using RAG_Code_Base.Database;
 using RAG_Code_Base.Models;
+using RAG_Code_Base.Services.Parsers;
 
 namespace RAG_Code_Base.Services.DataLoader
 {
@@ -8,9 +9,11 @@ namespace RAG_Code_Base.Services.DataLoader
         private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "Data");
         private readonly FileTypeResolver _typeResolver = new();
         private readonly ApplicationDbContext _applicationDbContext;
-        public FileLoaderService(ApplicationDbContext applicationDbContext)
+        private readonly ParserFactory _parserFactory;
+        public FileLoaderService(ApplicationDbContext applicationDbContext, ParserFactory parserFactory)
         {
             _applicationDbContext = applicationDbContext;
+            _parserFactory = parserFactory;
             if (!Directory.Exists(_storagePath))
                 Directory.CreateDirectory(_storagePath);
         }
@@ -32,6 +35,14 @@ namespace RAG_Code_Base.Services.DataLoader
 
             _applicationDbContext.FileItems.Add(fileItem);
             _applicationDbContext.SaveChanges();
+
+            var parser = _parserFactory.GetParser(fileItem.FileType);
+            if(parser != null)
+            {
+                var blocks = parser.Parse(fileItem);
+                _applicationDbContext.InfoBlocks.AddRange(blocks);
+                _applicationDbContext.SaveChanges();
+            }
 
             return fileItem;
         }
