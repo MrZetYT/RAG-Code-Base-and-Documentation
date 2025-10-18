@@ -14,7 +14,7 @@
             return fileType switch
             {
                 "Text" => _serviceProvider.GetService<TextFileParser>(),
-                "Markdown" => _serviceProvider.GetService<TextFileParser>(),
+                "Markdown" => _serviceProvider.GetService<MarkdownParser>(),
                 _ => null
             };
         }

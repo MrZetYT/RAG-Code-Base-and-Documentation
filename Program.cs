@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
 using RAG_Code_Base.Services.Parsers;
+using RAG_Code_Base.Services.Vectorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +12,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options=>
 
 builder.Services.AddScoped<FileLoaderService>();
 builder.Services.AddScoped<TextFileParser>();
+builder.Services.AddScoped<MarkdownParser>();
+
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
+builder.Services.AddSingleton<VectorizationService>();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
