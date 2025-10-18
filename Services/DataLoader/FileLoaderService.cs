@@ -1,4 +1,5 @@
-﻿using RAG_Code_Base.Database;
+﻿using Hangfire;
+using RAG_Code_Base.Database;
 using RAG_Code_Base.Models;
 using RAG_Code_Base.Services.Parsers;
 
@@ -36,15 +37,47 @@ namespace RAG_Code_Base.Services.DataLoader
             _applicationDbContext.FileItems.Add(fileItem);
             _applicationDbContext.SaveChanges();
 
-            var parser = _parserFactory.GetParser(fileItem.FileType);
-            if(parser != null)
-            {
-                var blocks = parser.Parse(fileItem);
-                _applicationDbContext.InfoBlocks.AddRange(blocks);
-                _applicationDbContext.SaveChanges();
-            }
+            BackgroundJob.Enqueue(() => ProcessFileInBackground(fileItem.Id));
 
             return fileItem;
+        }
+        // TODO (07.11 - агент-векторизатор): добавить векторизацию здесь
+
+        public void ProcessFileInBackground(Guid fileId)
+        {
+            var fileItem = _applicationDbContext.FileItems.Find(fileId);
+
+            if (fileItem == null) throw new InvalidDataException();
+
+            fileItem.Status = FileProcessingStatus.Parsing;
+            _applicationDbContext.SaveChanges();
+
+            try
+            {
+                var parser = _parserFactory.GetParser(fileItem.FileType);
+                if (parser != null)
+                {
+                    var blocks = parser.Parse(fileItem);
+                    _applicationDbContext.InfoBlocks.AddRange(blocks);
+                    _applicationDbContext.SaveChanges();
+                }
+                else
+                {
+                    fileItem.Status = FileProcessingStatus.Failed;
+                    fileItem.ErrorMessage = "Нет необходимого парсера!";
+                    _applicationDbContext.SaveChanges();
+                    return;
+                }
+            }
+            catch(Exception ex)
+            {
+                fileItem.Status = FileProcessingStatus.Failed;
+                fileItem.ErrorMessage = ex.Message;
+                _applicationDbContext.SaveChanges();
+                return;
+            }
+            fileItem.Status = FileProcessingStatus.Ready;
+            _applicationDbContext.SaveChanges();
         }
 
         public List<FileItem> GetAllFiles()

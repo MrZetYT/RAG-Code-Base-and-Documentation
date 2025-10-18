@@ -3,12 +3,23 @@ using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
 using RAG_Code_Base.Services.Parsers;
 using RAG_Code_Base.Services.Vectorization;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddDbContext<ApplicationDbContext>(options=>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(Hangfire.CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(c =>
+        c.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+
+builder.Services.AddHangfireServer();
 
 builder.Services.AddScoped<FileLoaderService>();
 builder.Services.AddScoped<TextFileParser>();
@@ -39,6 +50,8 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+app.UseHangfireDashboard("/hangfire");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
