@@ -27,6 +27,7 @@ builder.Services.AddScoped<MarkdownParser>();
 
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
+builder.Services.AddSingleton<FileValidator>();
 builder.Services.AddSingleton<VectorizationService>();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
