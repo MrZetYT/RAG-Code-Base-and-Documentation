@@ -1,6 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
+using RAG_Code_Base.Services.Parsers;
+using RAG_Code_Base.Services.Vectorization;
+using RAG_Code_Base.Services.VectorStorage;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +13,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(options=>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<FileLoaderService>();
-// Add services to the container.
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(Hangfire.CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(c =>
+        c.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
-builder.Services.AddControllers();
+builder.Services.AddHangfireServer();
+
+builder.Services.AddScoped<FileLoaderService>();
+builder.Services.AddScoped<TextFileParser>();
+builder.Services.AddScoped<MarkdownParser>();
+
+// Add services to the container.
+builder.Services.AddScoped<ParserFactory>();
+builder.Services.AddScoped<VectorStorageService>();
+builder.Services.AddSingleton<FileValidator>();
+builder.Services.AddSingleton<VectorizationService>();
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -31,6 +53,8 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+app.UseHangfireDashboard("/hangfire");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -12,6 +12,7 @@
         public int StartLine { get; set; }
         public int EndLine { get; set; }
         public string? HeaderSection { get; set; }
+        public bool IsVectorized { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
