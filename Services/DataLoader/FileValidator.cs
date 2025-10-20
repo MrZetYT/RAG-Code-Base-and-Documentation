@@ -14,11 +14,6 @@ namespace RAG_Code_Base.Services.DataLoader
 
         public ValidationResult Validate(IFormFile file)
         {
-            if(file == null)
-            {
-                return new ValidationResult { IsValid = false, ErrorMessage = "Файл пуст" };
-            }
-            
             if(file.Length > _maxFileSizeBytes)
             {
                 return new ValidationResult { IsValid = false, ErrorMessage = "Файл слишком большое. > 50 МБ" };

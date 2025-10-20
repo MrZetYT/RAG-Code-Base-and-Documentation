@@ -23,7 +23,7 @@ namespace RAG_Code_Base.Controllers
                 return BadRequest("Файл не выбран.");
 
             var validationResult = _fileValidator.Validate(file);
-            if (validationResult.IsValid == false)
+            if (!validationResult.IsValid)
             {
                 return BadRequest(validationResult.ErrorMessage);
             }

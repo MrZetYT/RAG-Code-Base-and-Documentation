@@ -3,6 +3,7 @@ using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
 using RAG_Code_Base.Services.Parsers;
 using RAG_Code_Base.Services.Vectorization;
+using RAG_Code_Base.Services.VectorStorage;
 using Hangfire;
 using Hangfire.PostgreSql;
 
@@ -27,6 +28,7 @@ builder.Services.AddScoped<MarkdownParser>();
 
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
+builder.Services.AddScoped<VectorStorageService>();
 builder.Services.AddSingleton<FileValidator>();
 builder.Services.AddSingleton<VectorizationService>();
 
