@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RAG_Code_Base.Database;
@@ -11,9 +12,11 @@ using RAG_Code_Base.Database;
 namespace RAG_Code_Base.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251015190042_AddInfoBlocksTable")]
+    partial class AddInfoBlocksTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,9 +31,6 @@ namespace RAG_Code_Base.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ErrorMessage")
-                        .HasColumnType("text");
-
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -42,9 +42,6 @@ namespace RAG_Code_Base.Migrations
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp with time zone");
@@ -82,9 +79,6 @@ namespace RAG_Code_Base.Migrations
 
                     b.Property<string>("HeaderSection")
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsVectorized")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("MethodName")
                         .HasColumnType("text");
