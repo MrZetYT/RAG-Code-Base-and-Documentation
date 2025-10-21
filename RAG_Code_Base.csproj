@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.21" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.21" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.20.12" />
+    <PackageReference Include="LM-Kit.NET" Version="2025.10.4" />
+    <PackageReference Include="Markdig" Version="0.42.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
       <PrivateAssets>all</PrivateAssets>
@@ -24,6 +29,7 @@
   <ItemGroup>
     <Folder Include="Configs\" />
     <Folder Include="Data\" />
+    <Folder Include="LM\" />
   </ItemGroup>
 
 	<ItemGroup>
