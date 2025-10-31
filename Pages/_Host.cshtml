@@ -1,0 +1,26 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@namespace RAG_Code_Base.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG File Manager</title>
+    <base href="~/" />
+    <link href="css/app.css" rel="stylesheet" />
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+</head>
+<body>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <div id="blazor-error-ui" style="display: none; background: lightyellow; padding: 20px; border: 2px solid red;">
+        <strong>Произошла ошибка!</strong> Смотрите консоль браузера.
+        <a href="" class="reload">Перезагрузить</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

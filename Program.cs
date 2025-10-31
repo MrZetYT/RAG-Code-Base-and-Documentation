@@ -32,6 +32,27 @@ builder.Services.AddScoped<VectorStorageService>();
 builder.Services.AddSingleton<FileValidator>();
 builder.Services.AddSingleton<VectorizationService>();
 
+builder.Services.AddRazorPages();
+
+
+builder.Services.AddServerSideBlazor(options =>
+{
+    options.DetailedErrors = true;
+});
+
+
+builder.Services.AddHttpClient();
+builder.Services.AddScoped(sp =>
+{
+    var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
+    client.BaseAddress = new Uri("http://localhost:5275");
+    return client;
+});
+
+
+
+
+
 builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -67,10 +88,13 @@ app.UseHttpsRedirection();
 
 // Используем статические файлы (для Blazor)
 app.UseStaticFiles();
+app.UseRouting();
 app.UseCors("AllowBlazor");
 
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapFallbackToFile("index.html");
+
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 app.Run();
