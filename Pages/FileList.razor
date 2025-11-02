@@ -1,0 +1,158 @@
+﻿@page "/"
+@page "/files"
+@using RAG_Code_Base.Models
+@using RAG_Code_Base.Services.DataLoader
+@using Microsoft.AspNetCore.Components.Forms
+@inject FileLoaderService FileLoaderService
+@inject ILogger<FileList> Logger
+@inject HttpClient Http
+@implements IDisposable
+
+<h1>Управление файлами</h1>
+
+<div class="upload-section">
+    <h3>Загрузить файл</h3>
+    <InputFile OnChange="HandleFileUpload" />
+    @if (!string.IsNullOrEmpty(uploadMessage))
+    {
+        <p class="@(uploadSuccess ? "success-message" : "error-message")">@uploadMessage</p>
+    }
+</div>
+
+
+
+<div class="file-list">
+    <h3>Список файлов</h3>
+    @if (files == null)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (!files.Any())
+    {
+        <p>Файлов пока нет. Загрузите первый файл!</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Имя файла</th>
+                    <th>Тип</th>
+                    <th>Статус</th>
+                    <th>Дата загрузки</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var file in files)
+                {
+                    <tr>
+                        <td>@file.FileName</td>
+                        <td>@file.FileType</td>
+                        <td>@file.Status</td>
+                        <td>@file.UploadedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            <EditForm Model="@file" OnValidSubmit="@(() => HandleDelete(file.Id))">
+                                <button type="submit" class="btn-delete">Удалить</button>
+                            </EditForm>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<FileItem>? files;
+    private string? uploadMessage;
+    private bool uploadSuccess;
+    private System.Threading.Timer? _refreshTimer;
+
+    protected override void OnInitialized()
+    {
+        LoadFiles();
+        StartAutoRefresh();
+    }
+
+    private void StartAutoRefresh()
+    {
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(() =>
+            {
+                LoadFiles();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+    }
+
+    private void LoadFiles()
+    {
+        files = FileLoaderService.GetAllFiles();
+    }
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        uploadMessage = null;
+
+        try
+        {
+            var file = e.File;
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 52428800);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var formFile = new FormFile(memoryStream, 0, memoryStream.Length, file.Name, file.Name)
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = file.ContentType
+            };
+
+            var savedFile = FileLoaderService.SaveFile(formFile);
+            uploadMessage = $"Файл '{savedFile.FileName}' успешно загружен!";
+            uploadSuccess = true;
+            LoadFiles();
+        }
+        catch (Exception ex)
+        {
+            uploadMessage = $"Ошибка: {ex.Message}";
+            uploadSuccess = false;
+        }
+    }
+
+    private void HandleDelete(Guid id)
+    {
+        try
+        {
+            Logger.LogInformation("Попытка удаления файла {FileId}", id);
+
+            var success = FileLoaderService.DeleteFile(id);
+
+            if (success)
+            {
+                uploadMessage = "Файл удалён!";
+                uploadSuccess = true;
+                LoadFiles();
+            }
+            else
+            {
+                uploadMessage = "Файл не найден.";
+                uploadSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Ошибка удаления файла {FileId}", id);
+            uploadMessage = $"Ошибка: {ex.Message}";
+            uploadSuccess = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+}
