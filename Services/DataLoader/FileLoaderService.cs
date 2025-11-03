@@ -62,6 +62,10 @@ namespace RAG_Code_Base.Services.DataLoader
             fileItem.Status = FileProcessingStatus.Parsing;
             _applicationDbContext.SaveChanges();
 
+
+            System.Threading.Thread.Sleep(5000);
+
+
             try
             {
                 var parser = _parserFactory.GetParser(fileItem.FileType);
@@ -70,11 +74,19 @@ namespace RAG_Code_Base.Services.DataLoader
                     var blocks = parser.Parse(fileItem);
                     _applicationDbContext.InfoBlocks.AddRange(blocks);
                     _applicationDbContext.SaveChanges();
+
+                    
+
+
+
                     fileItem.Status = FileProcessingStatus.Vectorizing;
                     foreach( var block in blocks)
                     {
                         BackgroundJob.Enqueue(() => VectorizeBlockInBackgroundAsync(block.Id));
                     }
+
+             
+
                 }
                 else
                 {
@@ -129,21 +141,25 @@ namespace RAG_Code_Base.Services.DataLoader
 
         public bool DeleteFile(Guid id)
         {
-            var fileItem = _applicationDbContext.FileItems.FirstOrDefault(f=>f.Id== id);
+            var fileItem = _applicationDbContext.FileItems
+                .Include(f => f.InfoBlocks)  // <-- добавили загрузку связанных блоков
+                .FirstOrDefault(f => f.Id == id);
 
             if (fileItem == null)
             {
                 return false;
             }
 
+            // Удаляем физический файл
             if (File.Exists(fileItem.FilePath))
             {
                 File.Delete(fileItem.FilePath);
             }
 
+            // Удаляем связанные InfoBlocks (каскадное удаление через EF)
+            // Благодаря Include они уже загружены и удалятся автоматически
             _applicationDbContext.FileItems.Remove(fileItem);
             _applicationDbContext.SaveChanges();
-
 
             return true;
         }

@@ -1,0 +1,14 @@
+﻿@page "/test"
+
+<h1>Тестовая страница</h1>
+<p>Счётчик: @counter</p>
+<button type="button" @onclick="IncrementCounter">Нажми меня</button>
+
+@code {
+    private int counter = 0;
+
+    private void IncrementCounter()
+    {
+        counter++;
+    }
+}       
