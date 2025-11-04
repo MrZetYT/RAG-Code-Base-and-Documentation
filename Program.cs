@@ -23,8 +23,13 @@ builder.Services.AddHangfire(configuration => configuration
 builder.Services.AddHangfireServer();
 
 builder.Services.AddScoped<FileLoaderService>();
+
+// Add parsers
 builder.Services.AddScoped<TextFileParser>();
 builder.Services.AddScoped<MarkdownParser>();
+builder.Services.AddScoped<CSharpParser>();
+builder.Services.AddScoped<PythonTreeSitterParser>();
+builder.Services.AddScoped<JavaScriptTreeSitterParser>();
 
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
