@@ -9,7 +9,9 @@ namespace RAG_Code_Base.Services.DataLoader
         {
             ".txt",
             ".rtf",
-            ".md"
+            ".md",
+            ".cs",
+            ".py"
         };
 
         public ValidationResult Validate(IFormFile file)

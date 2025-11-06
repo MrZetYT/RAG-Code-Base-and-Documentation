@@ -15,6 +15,9 @@
             {
                 "Text" => _serviceProvider.GetService<TextFileParser>(),
                 "Markdown" => _serviceProvider.GetService<MarkdownParser>(),
+                "CSharp" => _serviceProvider.GetService<CSharpParser>(),
+                "Python" => _serviceProvider.GetService<PythonTreeSitterParser>(),
+                "JavaScript" => _serviceProvider.GetService<JavaScriptTreeSitterParser>(),
                 _ => null
             };
         }
