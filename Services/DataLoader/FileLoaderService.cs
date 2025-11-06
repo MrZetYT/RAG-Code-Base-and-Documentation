@@ -17,6 +17,7 @@ namespace RAG_Code_Base.Services.DataLoader
         private readonly ParserFactory _parserFactory;
         private readonly VectorizationService _vectorizationService;
         private readonly VectorStorageService _vectorStorageService;
+
         public FileLoaderService(ApplicationDbContext applicationDbContext, ParserFactory parserFactory,
             VectorizationService vectorizationService, VectorStorageService vectorStorageService, ILogger<FileLoaderService> logger)
         {
@@ -51,7 +52,6 @@ namespace RAG_Code_Base.Services.DataLoader
 
             return fileItem;
         }
-        // TODO (07.11 - агент-векторизатор): добавить векторизацию здесь
 
         public void ProcessFileInBackground(Guid fileId)
         {
@@ -62,10 +62,6 @@ namespace RAG_Code_Base.Services.DataLoader
             fileItem.Status = FileProcessingStatus.Parsing;
             _applicationDbContext.SaveChanges();
 
-
-            System.Threading.Thread.Sleep(5000);
-
-
             try
             {
                 var parser = _parserFactory.GetParser(fileItem.FileType);
@@ -75,18 +71,11 @@ namespace RAG_Code_Base.Services.DataLoader
                     _applicationDbContext.InfoBlocks.AddRange(blocks);
                     _applicationDbContext.SaveChanges();
 
-                    
-
-
-
                     fileItem.Status = FileProcessingStatus.Vectorizing;
-                    foreach( var block in blocks)
+                    foreach (var block in blocks)
                     {
                         BackgroundJob.Enqueue(() => VectorizeBlockInBackgroundAsync(block.Id));
                     }
-
-             
-
                 }
                 else
                 {
@@ -96,7 +85,7 @@ namespace RAG_Code_Base.Services.DataLoader
                     return;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 fileItem.Status = FileProcessingStatus.Failed;
                 fileItem.ErrorMessage = ex.Message;
@@ -109,7 +98,7 @@ namespace RAG_Code_Base.Services.DataLoader
         public async Task VectorizeBlockInBackgroundAsync(Guid infoBlockId)
         {
             var infoBlock = _applicationDbContext.InfoBlocks
-                .Include(n=> n.FileItem).FirstOrDefault(id => id.Id == infoBlockId);
+                .Include(n => n.FileItem).FirstOrDefault(id => id.Id == infoBlockId);
 
             if (infoBlock == null) throw new InvalidDataException();
             try
@@ -125,9 +114,9 @@ namespace RAG_Code_Base.Services.DataLoader
 
             infoBlock.IsVectorized = true;
             _applicationDbContext.SaveChanges();
-            
+
             var unprocessedCount = _applicationDbContext.InfoBlocks.Count(b => b.FileItemId == infoBlock.FileItemId && !b.IsVectorized);
-            if(unprocessedCount == 0)
+            if (unprocessedCount == 0)
             {
                 infoBlock.FileItem.Status = FileProcessingStatus.Ready;
                 _applicationDbContext.SaveChanges();
@@ -136,13 +125,13 @@ namespace RAG_Code_Base.Services.DataLoader
 
         public List<FileItem> GetAllFiles()
         {
-            return _applicationDbContext.FileItems.ToList();
+            return _applicationDbContext.FileItems.AsNoTracking().ToList();
         }
 
         public bool DeleteFile(Guid id)
         {
             var fileItem = _applicationDbContext.FileItems
-                .Include(f => f.InfoBlocks)  // <-- добавили загрузку связанных блоков
+                .Include(f => f.InfoBlocks)
                 .FirstOrDefault(f => f.Id == id);
 
             if (fileItem == null)
@@ -150,14 +139,11 @@ namespace RAG_Code_Base.Services.DataLoader
                 return false;
             }
 
-            // Удаляем физический файл
             if (File.Exists(fileItem.FilePath))
             {
                 File.Delete(fileItem.FilePath);
             }
 
-            // Удаляем связанные InfoBlocks (каскадное удаление через EF)
-            // Благодаря Include они уже загружены и удалятся автоматически
             _applicationDbContext.FileItems.Remove(fileItem);
             _applicationDbContext.SaveChanges();
 
