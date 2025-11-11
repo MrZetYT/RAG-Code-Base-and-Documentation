@@ -6,6 +6,7 @@ using RAG_Code_Base.Services.Vectorization;
 using RAG_Code_Base.Services.VectorStorage;
 using Hangfire;
 using Hangfire.PostgreSql;
+using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,12 @@ builder.Services.AddScoped<MarkdownParser>();
 builder.Services.AddScoped<CSharpParser>();
 builder.Services.AddScoped<PythonTreeSitterParser>();
 builder.Services.AddScoped<JavaScriptTreeSitterParser>();
+builder.Services.AddScoped<TypeScriptTreeSitterParser>();
+builder.Services.AddScoped<JavaTreeSitterParser>();
+builder.Services.AddScoped<GoTreeSitterParser>();
+builder.Services.AddScoped<CppTreeSitterParser>();
+
+
 
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();

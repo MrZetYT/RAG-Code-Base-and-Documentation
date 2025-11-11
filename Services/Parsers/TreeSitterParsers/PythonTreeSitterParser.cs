@@ -1,13 +1,13 @@
 ﻿using TreeSitter;
-using TreeSitter.Python;
 
-namespace RAG_Code_Base.Services.Parsers
+namespace RAG_Code_Base.Services.Parsers.TreeSitterParsers
 {
+    //TODO: добавить виденье глобальных переменных и комментариев отдельных
     public class PythonTreeSitterParser : BaseTreeSitterParser
     {
-        protected override Language GetLanguage()
+        protected override string GetLanguageName()
         {
-            return PythonLanguage.Create();
+            return "Python";
         }
 
         protected override string[] GetFunctionNodeTypes()
@@ -32,22 +32,14 @@ namespace RAG_Code_Base.Services.Parsers
 
         protected override string? ExtractClassName(Node node)
         {
-            var nameNode = node.ChildByFieldName("name");
-            if (nameNode != null)
-            {
-                return nameNode.ToString();
-            }
-            return null;
+            var nameNode = node.GetChildForField("name");
+            return nameNode?.Text;
         }
 
         protected override string? ExtractFunctionName(Node node)
         {
-            var nameNode = node.ChildByFieldName("name");
-            if (nameNode != null)
-            {
-                return nameNode.ToString();
-            }
-            return null;
+            var nameNode = node.GetChildForField("name");
+            return nameNode?.Text;
         }
     }
 }
