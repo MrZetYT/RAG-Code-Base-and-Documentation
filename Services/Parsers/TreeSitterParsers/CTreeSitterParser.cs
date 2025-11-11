@@ -1,13 +1,11 @@
 ﻿using TreeSitter;
-using TreeSitter.Python;
-
-namespace RAG_Code_Base.Services.Parsers
+namespace RAG_Code_Base.Services.Parsers.TreeSitterParsers
 {
-    public class PythonTreeSitterParser : BaseTreeSitterParser
+    public class CTreeSitterParser : BaseTreeSitterParser
     {
-        protected override Language GetLanguage()
+        protected override string GetLanguageName()
         {
-            return PythonLanguage.Create();
+            return "C";
         }
 
         protected override string[] GetFunctionNodeTypes()
@@ -17,7 +15,7 @@ namespace RAG_Code_Base.Services.Parsers
 
         protected override string[] GetClassNodeTypes()
         {
-            return new[] { "class_definition" };
+            return new[] { "struct_specifier" };
         }
 
         protected override string[] GetInterfaceNodeTypes()
@@ -27,26 +25,28 @@ namespace RAG_Code_Base.Services.Parsers
 
         protected override string[] GetEnumNodeTypes()
         {
-            return Array.Empty<string>();
+            return new[] { "enum_specifier" };
         }
 
         protected override string? ExtractClassName(Node node)
         {
-            var nameNode = node.ChildByFieldName("name");
-            if (nameNode != null)
+            foreach (var child in node.NamedChildren)
             {
-                return nameNode.ToString();
+                if (child.Type == "type_identifier")
+                    return child.Text;
             }
+
             return null;
         }
 
         protected override string? ExtractFunctionName(Node node)
         {
-            var nameNode = node.ChildByFieldName("name");
-            if (nameNode != null)
+            foreach (var child in node.NamedChildren)
             {
-                return nameNode.ToString();
+                if (child.Type == "identifier")
+                    return child.Text;
             }
+
             return null;
         }
     }

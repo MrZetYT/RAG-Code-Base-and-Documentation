@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>4cc34a3d-86c9-4485-967b-a26924baf298</UserSecretsId>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.21" />
@@ -24,10 +25,7 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-    <PackageReference Include="TreeSitter" Version="1.0.0" />
-    <PackageReference Include="TreeSitter.Bindings" Version="0.4.0" />
-    <PackageReference Include="TreeSitter.JavaScript" Version="1.0.0" />
-    <PackageReference Include="TreeSitter.Python" Version="1.0.0" />
+    <PackageReference Include="TreeSitter.DotNet" Version="1.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Configs\" />
@@ -38,8 +36,14 @@
 		<Compile Remove="**/Data/**" />
 		<None Remove="**/Data/**" />
 	</ItemGroup>
-	
-  <ItemGroup>
+	<ItemGroup>
+		<None Update="$(UserProfile)\.nuget\packages\treesitter.bindings\*\runtimes\win-x64\native\tree-sitter.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+
+	<ItemGroup>
 		<None Include="Data\**" CopyToOutputDirectory="Never" />
   </ItemGroup>
 </Project>

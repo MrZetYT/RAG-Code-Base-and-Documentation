@@ -1,18 +1,23 @@
 ﻿using TreeSitter;
-using TreeSitter.JavaScript;
 
-namespace RAG_Code_Base.Services.Parsers
+namespace RAG_Code_Base.Services.Parsers.TreeSitterParsers
 {
     public class JavaScriptTreeSitterParser : BaseTreeSitterParser
     {
-        protected override Language GetLanguage()
+        protected override string GetLanguageName()
         {
-            return JavaScriptLanguage.Create();
+            return "JavaScript";
         }
 
         protected override string[] GetFunctionNodeTypes()
         {
-            return new[] { "function_declaration", "arrow_function", "function" };
+            return new[]
+            {
+                "function_declaration",
+                "arrow_function",
+                "function",
+                "method_definition"
+            };
         }
 
         protected override string[] GetClassNodeTypes()
@@ -32,23 +37,20 @@ namespace RAG_Code_Base.Services.Parsers
 
         protected override string? ExtractClassName(Node node)
         {
-            var nameNode = node.ChildByFieldName("name");
-            if (nameNode != null)
-            {
-                return nameNode.ToString();
-            }
-            return null;
+            var nameNode = node.GetChildForField("name");
+            return nameNode?.Text;
         }
 
         protected override string? ExtractFunctionName(Node node)
         {
-            var nameNode = node.ChildByFieldName("name");
+            var nameNode = node.GetChildForField("name");
             if (nameNode != null)
             {
-                return nameNode.ToString();
+                return nameNode.Text;
             }
 
-            return $"<{node.Kind}_line_{node.StartPosition.Row + 1}>";
+            // Для анонимных функций
+            return $"<{node.Type}_line_{node.StartPosition.Row + 1}>";
         }
     }
 }

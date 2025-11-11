@@ -1,11 +1,11 @@
 ﻿using RAG_Code_Base.Models;
 using TreeSitter;
 
-namespace RAG_Code_Base.Services.Parsers
+namespace RAG_Code_Base.Services.Parsers.TreeSitterParsers
 {
     public abstract class BaseTreeSitterParser : IFileParser
     {
-        protected abstract Language GetLanguage();
+        protected abstract string GetLanguageName();
         protected abstract string[] GetFunctionNodeTypes();
         protected abstract string[] GetClassNodeTypes();
         protected abstract string[] GetInterfaceNodeTypes();
@@ -18,54 +18,75 @@ namespace RAG_Code_Base.Services.Parsers
         {
             string code = File.ReadAllText(fileItem.FilePath);
 
-            using var parser = new Parser();
-            parser.Language = GetLanguage();
-
+            using var language = new Language(GetLanguageName());
+            using var parser = new Parser { Language = language };
             using var tree = parser.Parse(code);
 
+            if (tree?.RootNode == null)
+            {
+                return new List<InfoBlock>();
+            }
+
             var blocks = new List<InfoBlock>();
-            CollectNodes(tree.Root, fileItem.Id, blocks);
+            CollectNodes(tree.RootNode, fileItem.Id, blocks, fileItem);
 
             return blocks;
         }
 
-        private void CollectNodes(Node node, Guid fileItemId, List<InfoBlock> blocks)
+        private void CollectNodes(Node node, Guid fileItemId, List<InfoBlock> blocks, FileItem fileItem)
         {
-            string nodeKind = node.Kind;
-            if (GetFunctionNodeTypes().Contains(nodeKind))
+            string nodeType = node.Type;
+            bool found = false;
+
+            if (GetFunctionNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateFunctionBlock(node, fileItemId));
+                found = true;
             }
-            else if (GetClassNodeTypes().Contains(nodeKind))
+            else if (GetClassNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateClassBlock(node, fileItemId));
+                found = true;
             }
-            else if (GetInterfaceNodeTypes().Contains(nodeKind))
+            else if (GetInterfaceNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateInterfaceBlock(node, fileItemId));
+                found = true;
             }
-            else if (GetEnumNodeTypes().Contains(nodeKind))
+            else if (GetEnumNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateEnumBlock(node, fileItemId));
+                found = true;
             }
 
-            foreach(var child in node.NamedChildren)
+            foreach (var child in node.NamedChildren)
             {
-                CollectNodes(child, fileItemId, blocks);
+                CollectNodes(child, fileItemId, blocks, fileItem);
+            }
+
+            if (!found && (GetLanguageName() == "HTML" || GetLanguageName() == "CSS") && blocks.Count == 0)
+            {
+                string fullContent = File.ReadAllText(fileItem.FilePath);
+
+                blocks.Add(new InfoBlock
+                {
+                    FileItemId = fileItemId,
+                    Content = fullContent,
+                    BlockType = "Content",
+                    StartLine = 1,
+                    EndLine = fullContent.Split('\n').Length,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
         }
 
-        private string GetNodeText(Node node)
-        {
-            return node.ToString();
-        }
 
         private InfoBlock CreateFunctionBlock(Node node, Guid fileItemId)
         {
-            return new InfoBlock()
+            return new InfoBlock
             {
                 FileItemId = fileItemId,
-                Content = node.ToString(),
+                Content = node.Text,
                 BlockType = "Method",
                 MethodName = ExtractFunctionName(node),
                 ClassName = FindParentClassName(node),
@@ -74,12 +95,13 @@ namespace RAG_Code_Base.Services.Parsers
                 CreatedAt = DateTime.UtcNow
             };
         }
+
         private InfoBlock CreateClassBlock(Node node, Guid fileItemId)
         {
             return new InfoBlock
             {
                 FileItemId = fileItemId,
-                Content = node.ToString(),
+                Content = node.Text,
                 BlockType = "Class",
                 ClassName = ExtractClassName(node),
                 StartLine = node.StartPosition.Row + 1,
@@ -93,7 +115,7 @@ namespace RAG_Code_Base.Services.Parsers
             return new InfoBlock
             {
                 FileItemId = fileItemId,
-                Content = node.ToString(),
+                Content = node.Text,
                 BlockType = "Interface",
                 ClassName = ExtractClassName(node),
                 StartLine = node.StartPosition.Row + 1,
@@ -107,7 +129,7 @@ namespace RAG_Code_Base.Services.Parsers
             return new InfoBlock
             {
                 FileItemId = fileItemId,
-                Content = node.ToString(),
+                Content = node.Text,
                 BlockType = "Enum",
                 ClassName = ExtractClassName(node),
                 StartLine = node.StartPosition.Row + 1,
@@ -122,7 +144,7 @@ namespace RAG_Code_Base.Services.Parsers
 
             while (parent != null)
             {
-                if (GetClassNodeTypes().Contains(parent.Kind))
+                if (GetClassNodeTypes().Contains(parent.Type))
                 {
                     return ExtractClassName(parent);
                 }
