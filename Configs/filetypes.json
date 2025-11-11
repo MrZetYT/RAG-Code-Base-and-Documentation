@@ -7,11 +7,9 @@
     ".ts": "TypeScript",
     ".cpp": "C++",
     ".hpp": "C++",
-    ".go": "Go",
     ".c": "C",
     ".rs": "Rust",
-    ".php": "PHP",
-    ".swift": "Swift"
+    ".php": "PHP"
   },
   "Web": {
     ".html": "HTML",

@@ -33,8 +33,12 @@ builder.Services.AddScoped<PythonTreeSitterParser>();
 builder.Services.AddScoped<JavaScriptTreeSitterParser>();
 builder.Services.AddScoped<TypeScriptTreeSitterParser>();
 builder.Services.AddScoped<JavaTreeSitterParser>();
-builder.Services.AddScoped<GoTreeSitterParser>();
 builder.Services.AddScoped<CppTreeSitterParser>();
+builder.Services.AddScoped<CTreeSitterParser>();
+builder.Services.AddScoped<RustTreeSitterParser>();
+builder.Services.AddScoped<PHPTreeSitterParser>();
+builder.Services.AddScoped<HTMLTreeSitterParser>();
+builder.Services.AddScoped<CSSTreeSitterParser>();
 
 
 

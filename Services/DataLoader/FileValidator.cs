@@ -17,7 +17,11 @@ namespace RAG_Code_Base.Services.DataLoader
             ".ts",
             ".cpp",
             ".hpp",
-            ".go"
+            ".c",
+            ".rs",
+            ".php",
+            ".html",
+            ".css"
         };
 
         public ValidationResult Validate(IFormFile file)

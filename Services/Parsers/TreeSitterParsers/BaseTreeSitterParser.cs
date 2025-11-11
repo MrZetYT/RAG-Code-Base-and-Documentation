@@ -28,38 +28,58 @@ namespace RAG_Code_Base.Services.Parsers.TreeSitterParsers
             }
 
             var blocks = new List<InfoBlock>();
-            CollectNodes(tree.RootNode, fileItem.Id, blocks);
+            CollectNodes(tree.RootNode, fileItem.Id, blocks, fileItem);
 
             return blocks;
         }
 
-        private void CollectNodes(Node node, Guid fileItemId, List<InfoBlock> blocks)
+        private void CollectNodes(Node node, Guid fileItemId, List<InfoBlock> blocks, FileItem fileItem)
         {
             string nodeType = node.Type;
+            bool found = false;
 
             if (GetFunctionNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateFunctionBlock(node, fileItemId));
+                found = true;
             }
             else if (GetClassNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateClassBlock(node, fileItemId));
+                found = true;
             }
             else if (GetInterfaceNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateInterfaceBlock(node, fileItemId));
+                found = true;
             }
             else if (GetEnumNodeTypes().Contains(nodeType))
             {
                 blocks.Add(CreateEnumBlock(node, fileItemId));
+                found = true;
             }
 
-            // Рекурсивно обходим дочерние узлы
             foreach (var child in node.NamedChildren)
             {
-                CollectNodes(child, fileItemId, blocks);
+                CollectNodes(child, fileItemId, blocks, fileItem);
+            }
+
+            if (!found && (GetLanguageName() == "HTML" || GetLanguageName() == "CSS") && blocks.Count == 0)
+            {
+                string fullContent = File.ReadAllText(fileItem.FilePath);
+
+                blocks.Add(new InfoBlock
+                {
+                    FileItemId = fileItemId,
+                    Content = fullContent,
+                    BlockType = "Content",
+                    StartLine = 1,
+                    EndLine = fullContent.Split('\n').Length,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
         }
+
 
         private InfoBlock CreateFunctionBlock(Node node, Guid fileItemId)
         {

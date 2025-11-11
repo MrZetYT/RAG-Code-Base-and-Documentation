@@ -21,11 +21,14 @@ namespace RAG_Code_Base.Services.Parsers
                 "Python" => _serviceProvider.GetService<PythonTreeSitterParser>(),
                 "JavaScript" => _serviceProvider.GetService<JavaScriptTreeSitterParser>(),
                 "TypeScript" => _serviceProvider.GetService<TypeScriptTreeSitterParser>(),
-                "Java"=> _serviceProvider.GetService<JavaTreeSitterParser>(),
-                "Go" => _serviceProvider.GetService<GoTreeSitterParser>(),
+                "Java" => _serviceProvider.GetService<JavaTreeSitterParser>(),
                 "C++" => _serviceProvider.GetService<CppTreeSitterParser>(),
-                //TODO: Протестить парсеры после Python
-                //TODO: Допилить парсеры на  C, Rust, PHP, Swift
+                "C" => _serviceProvider.GetService<CTreeSitterParser>(),
+                "Rust" => _serviceProvider.GetService<RustTreeSitterParser>(),
+                "PHP" => _serviceProvider.GetService<PHPTreeSitterParser>(),
+                "HTML" => _serviceProvider.GetService<HTMLTreeSitterParser>(),
+                "CSS" => _serviceProvider.GetService<CSSTreeSitterParser>(),
+                // TODO: Поправить CSS, HTML, PHP парсер
                 _ => null
             };
         }
