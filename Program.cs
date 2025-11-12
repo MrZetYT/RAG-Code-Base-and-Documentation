@@ -39,6 +39,8 @@ builder.Services.AddScoped<RustTreeSitterParser>();
 builder.Services.AddScoped<PHPTreeSitterParser>();
 builder.Services.AddScoped<HTMLTreeSitterParser>();
 builder.Services.AddScoped<CSSTreeSitterParser>();
+builder.Services.AddScoped<PdfParser>();
+builder.Services.AddScoped<DocxParser>();
 
 
 
