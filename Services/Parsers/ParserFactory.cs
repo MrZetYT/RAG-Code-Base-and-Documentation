@@ -28,6 +28,8 @@ namespace RAG_Code_Base.Services.Parsers
                 "PHP" => _serviceProvider.GetService<PHPTreeSitterParser>(),
                 "HTML" => _serviceProvider.GetService<HTMLTreeSitterParser>(),
                 "CSS" => _serviceProvider.GetService<CSSTreeSitterParser>(),
+                "PDF" => _serviceProvider.GetService<PdfParser>(),
+                "DOCX" => _serviceProvider.GetService<DocxParser>(),
                 // TODO: Поправить CSS, HTML, PHP парсер
                 _ => null
             };

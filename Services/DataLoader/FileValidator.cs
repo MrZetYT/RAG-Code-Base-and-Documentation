@@ -21,7 +21,9 @@ namespace RAG_Code_Base.Services.DataLoader
             ".rs",
             ".php",
             ".html",
-            ".css"
+            ".css",
+            ".pdf",
+            ".docx"
         };
 
         public ValidationResult Validate(IFormFile file)
