@@ -149,5 +149,23 @@ namespace RAG_Code_Base.Services.DataLoader
 
             return true;
         }
+
+        public bool DeleteAllFiles()
+        {
+            var files = _applicationDbContext.FileItems
+                .Include(n => n.InfoBlocks)
+                .ToList();
+
+            foreach (var file in files)
+            {
+                if (File.Exists(file.FilePath))
+                    File.Delete(file.FilePath);
+            }
+
+            _applicationDbContext.FileItems.RemoveRange(files);
+            _applicationDbContext.SaveChanges();
+
+            return true;
+        }
     }
 }

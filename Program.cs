@@ -7,6 +7,7 @@ using RAG_Code_Base.Services.VectorStorage;
 using Hangfire;
 using Hangfire.PostgreSql;
 using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
+using RAG_Code_Base.Services.Explanation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddHangfire(configuration => configuration
 builder.Services.AddHangfireServer();
 
 builder.Services.AddScoped<FileLoaderService>();
+builder.Services.AddScoped<ExplanationService>();
 
 // Add parsers
 builder.Services.AddScoped<TextFileParser>();
@@ -47,7 +49,7 @@ builder.Services.AddScoped<DocxParser>();
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
 builder.Services.AddScoped<VectorStorageService>();
-builder.Services.AddSingleton<FileValidator>();
+builder.Services.AddScoped<FileValidator>();
 builder.Services.AddSingleton<VectorizationService>();
 
 builder.Services.AddRazorPages();

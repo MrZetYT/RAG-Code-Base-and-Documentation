@@ -46,5 +46,13 @@ namespace RAG_Code_Base.Controllers
             if (!deletedFile) return NotFound("Файл не найден.");
             return NoContent();
         }
+
+        [HttpDelete("DeleteAll")]
+        public IActionResult DeleteAllFiles()
+        {
+            var isDeleted = _fileLoaderService.DeleteAllFiles();
+            if (!isDeleted) return NotFound("Файлов нет");
+            return NoContent();
+        }
     }
 }
