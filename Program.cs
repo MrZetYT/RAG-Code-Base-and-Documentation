@@ -6,6 +6,7 @@ using RAG_Code_Base.Services.Vectorization;
 using RAG_Code_Base.Services.VectorStorage;
 using Hangfire;
 using Hangfire.PostgreSql;
+using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,13 +24,36 @@ builder.Services.AddHangfire(configuration => configuration
 builder.Services.AddHangfireServer();
 
 builder.Services.AddScoped<FileLoaderService>();
+
+// Add parsers
 builder.Services.AddScoped<TextFileParser>();
 builder.Services.AddScoped<MarkdownParser>();
+builder.Services.AddScoped<CSharpParser>();
+builder.Services.AddScoped<PythonTreeSitterParser>();
+builder.Services.AddScoped<JavaScriptTreeSitterParser>();
+builder.Services.AddScoped<TypeScriptTreeSitterParser>();
+builder.Services.AddScoped<JavaTreeSitterParser>();
+builder.Services.AddScoped<CppTreeSitterParser>();
+builder.Services.AddScoped<CTreeSitterParser>();
+builder.Services.AddScoped<RustTreeSitterParser>();
+builder.Services.AddScoped<PHPTreeSitterParser>();
+builder.Services.AddScoped<HTMLTreeSitterParser>();
+builder.Services.AddScoped<CSSTreeSitterParser>();
+builder.Services.AddScoped<PdfParser>();
+builder.Services.AddScoped<DocxParser>();
+
+
 
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
-builder.Services.AddScoped<VectorStorageService>();
+
+//именно так и никак иначе
+builder.Services.AddSingleton<VectorStorageService>();
+
+
 builder.Services.AddSingleton<FileValidator>();
+
+
 builder.Services.AddSingleton<VectorizationService>();
 
 builder.Services.AddRazorPages();
@@ -74,6 +98,13 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var vectorStorage = scope.ServiceProvider.GetRequiredService<VectorStorageService>();
+    // Сервис инициализируется здесь
+}
+
 
 app.UseHangfireDashboard("/hangfire");
 
