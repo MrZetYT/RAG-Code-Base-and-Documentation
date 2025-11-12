@@ -46,8 +46,14 @@ builder.Services.AddScoped<DocxParser>();
 
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
-builder.Services.AddScoped<VectorStorageService>();
+
+//именно так и никак иначе
+builder.Services.AddSingleton<VectorStorageService>();
+
+
 builder.Services.AddSingleton<FileValidator>();
+
+
 builder.Services.AddSingleton<VectorizationService>();
 
 builder.Services.AddRazorPages();
@@ -92,6 +98,13 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var vectorStorage = scope.ServiceProvider.GetRequiredService<VectorStorageService>();
+    // Сервис инициализируется здесь
+}
+
 
 app.UseHangfireDashboard("/hangfire");
 
