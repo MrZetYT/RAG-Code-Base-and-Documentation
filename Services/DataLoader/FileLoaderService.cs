@@ -104,7 +104,7 @@ namespace RAG_Code_Base.Services.DataLoader
             try
             {
                 var vector = await _vectorizationService.GenerateEmbeddingAsync(infoBlock.Content);
-                await _vectorStorageService.SaveEmbeddingAsync(infoBlockId, vector);
+                await _vectorStorageService.SaveEmbeddingAsync(infoBlockId, vector, _applicationDbContext);
             }
             catch (Exception ex)
             {

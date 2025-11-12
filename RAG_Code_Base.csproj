@@ -26,6 +26,7 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
+    <PackageReference Include="Qdrant.Client" Version="1.15.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="TreeSitter.DotNet" Version="1.1.0" />
   </ItemGroup>
