@@ -1,9 +1,12 @@
 ﻿
 
+using RAG_Code_Base.Database;
+
 namespace RAG_Code_Base.Services.DataLoader
 {
     public class FileValidator
     {
+        private readonly ApplicationDbContext _applicationDbContext;
         private readonly long _maxFileSizeBytes = 50 * 1024 * 1024;
         private readonly HashSet<string> _allowedExtensions = new()
         {
@@ -26,11 +29,21 @@ namespace RAG_Code_Base.Services.DataLoader
             ".docx"
         };
 
+        public FileValidator(ApplicationDbContext applicationDbContext)
+        {
+            _applicationDbContext = applicationDbContext;
+        }
+
         public ValidationResult Validate(IFormFile file)
         {
             if(file.Length > _maxFileSizeBytes)
             {
                 return new ValidationResult { IsValid = false, ErrorMessage = "Файл слишком большое. > 50 МБ" };
+            }
+            
+            if(_applicationDbContext.FileItems.Any(n => n.FileName == file.FileName))
+            {
+                return new ValidationResult { IsValid = false, ErrorMessage = "Файл с этим именем уже добавлен" };
             }
             
             var extension = Path.GetExtension(file.FileName).ToLower();
