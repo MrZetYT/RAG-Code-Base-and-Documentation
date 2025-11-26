@@ -144,6 +144,8 @@ namespace RAG_Code_Base.Services.DataLoader
                 File.Delete(fileItem.FilePath);
             }
 
+            _vectorStorageService.DeleteFileEmbeddingsAsync(id);
+
             _applicationDbContext.FileItems.Remove(fileItem);
             _applicationDbContext.SaveChanges();
 
@@ -160,7 +162,10 @@ namespace RAG_Code_Base.Services.DataLoader
             {
                 if (File.Exists(file.FilePath))
                     File.Delete(file.FilePath);
+                _vectorStorageService.DeleteFileEmbeddingsAsync(file.Id);
             }
+            
+
 
             _applicationDbContext.FileItems.RemoveRange(files);
             _applicationDbContext.SaveChanges();
