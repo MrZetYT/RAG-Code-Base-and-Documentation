@@ -24,9 +24,6 @@ namespace RAG_Code_Base.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Поиск похожих блоков кода по текстовому запросу
-        /// </summary>
         [HttpPost("query")]
         public async Task<IActionResult> SearchByQuery([FromBody] SearchRequest request)
         {
@@ -37,9 +34,8 @@ namespace RAG_Code_Base.Controllers
                     return BadRequest("Запрос не может быть пустым");
                 }
 
-                _logger.LogInformation("🔍 Поиск по запросу: '{Query}'", request.Query);
+                _logger.LogInformation("Поиск по запросу: '{Query}'", request.Query);
 
-                // 1. Векторизуем запрос пользователя
                 var queryEmbedding = await _vectorizationService.GenerateEmbeddingAsync(request.Query);
 
                 if (queryEmbedding == null || queryEmbedding.Length == 0)
@@ -47,7 +43,6 @@ namespace RAG_Code_Base.Controllers
                     return BadRequest("Не удалось создать вектор для запроса");
                 }
 
-                // 2. Ищем похожие блоки в Qdrant
                 var similarBlocks = await _vectorStorageService.SearchSimilarBlocksAsync(
                     queryEmbedding
                 );
@@ -61,14 +56,11 @@ namespace RAG_Code_Base.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ошибка при поиске");
+                _logger.LogError(ex, "Ошибка при поиске");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// Получить статистику векторной базы
-        /// </summary>
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats([FromServices] ApplicationDbContext dbContext)
         {
@@ -79,13 +71,12 @@ namespace RAG_Code_Base.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ошибка при получении статистики");
+                _logger.LogError(ex, "Ошибка при получении статистики");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
     }
 
-    // Request/Response модели
     public class SearchRequest
     {
         public string Query { get; set; }

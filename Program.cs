@@ -12,7 +12,7 @@ using RAG_Code_Base.Services.Explanation;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddDbContext<ApplicationDbContext>(options=>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHangfire(configuration => configuration
@@ -55,7 +55,6 @@ builder.Services.AddScoped<DocxParser>();
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
 
-//именно так и никак иначе
 builder.Services.AddSingleton<VectorStorageService>();
 
 
@@ -91,7 +90,6 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Добавляем CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
@@ -110,7 +108,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var vectorStorage = scope.ServiceProvider.GetRequiredService<VectorStorageService>();
-    // Сервис инициализируется здесь
 }
 
 
@@ -125,7 +122,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Используем статические файлы (для Blazor)
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowBlazor");

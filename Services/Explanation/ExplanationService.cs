@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LMKit.Model;
-using LMKit.TextGeneration;
+using LLama;
+using LLama.Common;
 using Microsoft.Extensions.Logging;
 using RAG_Code_Base.Models;
 using RAG_Code_Base.Services.Vectorization;
@@ -13,10 +14,10 @@ using RAG_Code_Base.Services.VectorStorage;
 
 namespace RAG_Code_Base.Services.Explanation
 {
-    public class ExplanationService
+    public class ExplanationService : IDisposable
     {
-        private readonly LM _model;
-        private readonly MultiTurnConversation _conversation;
+        private readonly LLamaWeights _weights;
+        private readonly ModelParams _modelParams;
         private readonly ILogger<ExplanationService>? _logger;
         private readonly VectorizationService _vectorizationService;
         private readonly VectorStorageService _vectorStorageService;
@@ -32,9 +33,17 @@ namespace RAG_Code_Base.Services.Explanation
 
             try
             {
-                var modelPath = Path.Combine(Directory.GetCurrentDirectory(), "LM", "gemma-3-it-1B-Q4_K_M.gguf");
-                _model = new LM(modelPath);
-                _conversation = new MultiTurnConversation(_model);
+                var modelPath = Path.Combine(Directory.GetCurrentDirectory(), "LM", "Qwen2.5-Coder-3B-Instruct-Q4_K_M.gguf");
+
+                _modelParams = new ModelParams(modelPath)
+                {
+                    ContextSize = 4096,
+                    GpuLayerCount = 0
+                };
+
+                _weights = LLamaWeights.LoadFromFile(_modelParams);
+
+                _logger?.LogInformation("ExplanationService инициализирован (LLamaSharp)");
             }
             catch (Exception ex)
             {
@@ -54,7 +63,7 @@ namespace RAG_Code_Base.Services.Explanation
                 _logger?.LogInformation("Получен вопрос: '{Question}'", question);
 
                 _logger?.LogInformation("Генерация эмбеддинга для вопроса...");
-                var questionEmbedding = await _vectorizationService.GenerateEmbeddingAsync(question);
+                var questionEmbedding = await _vectorizationService.GenerateEmbeddingAsync(question, cancellationToken);
 
                 if (questionEmbedding == null || questionEmbedding.Length == 0)
                 {
@@ -68,11 +77,9 @@ namespace RAG_Code_Base.Services.Explanation
                 }
 
                 _logger?.LogInformation("Поиск релевантных блоков в векторной базе...");
-                var similarBlocks = await _vectorStorageService.SearchSimilarBlocksAsync(
-                    questionEmbedding
-                );
-
-                
+                var similarBlocks = (await _vectorStorageService.SearchSimilarBlocksAsync(questionEmbedding))
+                    .Take(3)
+                    .ToList();
 
                 _logger?.LogInformation("Найдено {Count} релевантных блоков", similarBlocks.Count);
 
@@ -85,7 +92,11 @@ namespace RAG_Code_Base.Services.Explanation
                         location += $" | Метод: {block.MethodName}";
                     location += $" | Строки: {block.StartLine}-{block.EndLine}]";
 
-                    return $"{location}\n\n{block.Content}";
+                    var content = block.Content.Length > 300
+                        ? block.Content[..300] + "..."
+                        : block.Content;
+
+                    return $"{location}\n\n{content}";
                 }).ToList();
 
                 _logger?.LogInformation("Генерация ответа с помощью LLM...");
@@ -133,28 +144,42 @@ namespace RAG_Code_Base.Services.Explanation
                     ? string.Join("\n\n---\n\n", contexts.Where(c => !string.IsNullOrWhiteSpace(c)))
                     : "Контекст отсутствует.";
 
-                string prompt = $@"
-                            Ты — инженер-программист. Объясни код и технический текст простыми словами.
-                            Если данных недостаточно — честно скажи, что данных не хватает.
+                string prompt = $"""
+                                 Ты — инженер-программист. Объясни код и технический текст простыми словами.
+                                 Если данных недостаточно — честно скажи, что данных не хватает.
 
-                            Контекст из кодовой базы:
-                            {contextBlock}
+                                 Контекст из кодовой базы:
+                                 {contextBlock}
 
-                            Вопрос пользователя:
-                            {question}
+                                 Вопрос пользователя:
+                                 {question}
 
-                            Ответ:
-                            ";
+                                 Ответ:
+                                 """;
 
-                var response = await _conversation.SubmitAsync(prompt, cancellationToken);
-
-                if (response == null || string.IsNullOrWhiteSpace(response.Completion))
+                var inferenceParams = new InferenceParams
                 {
-                    _logger?.LogWarning("Модель вернула пустой ответ или null.");
+                    MaxTokens = 512,
+                    AntiPrompts = new List<string> { "Вопрос пользователя:", "Контекст из кодовой базы:" }
+                };
+
+                var executor = new StatelessExecutor(_weights, _modelParams);
+
+                var responseBuilder = new StringBuilder();
+                await foreach (var token in executor.InferAsync(prompt, inferenceParams, cancellationToken))
+                {
+                    responseBuilder.Append(token);
+                }
+
+                var result = responseBuilder.ToString().Trim();
+
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    _logger?.LogWarning("Модель вернула пустой ответ.");
                     return "Модель не смогла сгенерировать ответ.";
                 }
 
-                return response.Completion.Trim();
+                return result;
             }
             catch (OperationCanceledException)
             {
@@ -167,6 +192,11 @@ namespace RAG_Code_Base.Services.Explanation
                 return "Произошла ошибка при объяснении.";
             }
         }
+
+        public void Dispose()
+        {
+            _weights.Dispose();
+        }
     }
 
     public class ExplanationResponse
@@ -174,6 +204,7 @@ namespace RAG_Code_Base.Services.Explanation
         public string Question { get; set; }
         public string Answer { get; set; }
         public List<SimilarBlock> FoundBlocks { get; set; }
+
         public string GetSourcesSummary()
         {
             if (FoundBlocks == null || FoundBlocks.Count == 0)
