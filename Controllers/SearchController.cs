@@ -31,7 +31,7 @@ namespace RAG_Code_Base.Controllers
             {
                 if (string.IsNullOrWhiteSpace(request.Query))
                 {
-                    return BadRequest("Запрос не может быть пустым");
+                    return BadRequest(new ApiError("null_request","Запрос не может быть пустым"));
                 }
 
                 _logger.LogInformation("Поиск по запросу: '{Query}'", request.Query);
@@ -40,13 +40,13 @@ namespace RAG_Code_Base.Controllers
 
                 if (queryEmbedding == null || queryEmbedding.Length == 0)
                 {
-                    return BadRequest("Не удалось создать вектор для запроса");
+                    return BadRequest(new ApiError("null_vector","Не удалось создать вектор для запроса"));
                 }
 
                 var similarBlocks = await _vectorStorageService.SearchSimilarBlocksAsync(
                     queryEmbedding
                 );
-
+                
                 return Ok(new SearchResponse
                 {
                     Query = request.Query,
@@ -57,7 +57,7 @@ namespace RAG_Code_Base.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при поиске");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500,new ApiError("internal_error", ex.Message));
             }
         }
 
@@ -72,7 +72,7 @@ namespace RAG_Code_Base.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении статистики");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new ApiError("internal_error", ex.Message));
             }
         }
     }

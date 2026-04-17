@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RAG_Code_Base.Services.Explanation;
-using System.Threading;
-using System.Threading.Tasks;
+using RAG_Code_Base.Models;
 
 namespace RAG_Code_Base.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api")]
     public class ExplanationController : ControllerBase
     {
         private readonly ExplanationService _explanationService;
@@ -20,13 +19,13 @@ namespace RAG_Code_Base.Controllers
             _logger = logger;
         }
 
-        [HttpPost("ask")]
+        [HttpPost("query")]
         public async Task<IActionResult> Ask(
             [FromBody] ExplanationRequest request,
             CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.Question))
-                return BadRequest(new { error = "Вопрос не может быть пустым." });
+                return BadRequest(new ApiError("null_question","Вопрос не может быть пустым"));
 
             _logger.LogInformation("📩 Получен вопрос: '{Question}'", request.Question);
 
@@ -34,26 +33,6 @@ namespace RAG_Code_Base.Controllers
                 request.Question,
                 request.TopK ?? 5,
                 request.MinSimilarity ?? 0.5,
-                cancellationToken
-            );
-
-            return Ok(response);
-        }
-
-        [HttpGet("ask")]
-        public async Task<IActionResult> AskSimple(
-            [FromQuery] string q,
-            [FromQuery] int topK = 5,
-            [FromQuery] double minSimilarity = 0.5,
-            CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(q))
-                return BadRequest(new { error = "Параметр 'q' обязателен" });
-
-            var response = await _explanationService.ExplainWithSearchAsync(
-                q,
-                topK,
-                minSimilarity,
                 cancellationToken
             );
 
