@@ -5,6 +5,7 @@ using RAG_Code_Base.Services.Parsers;
 using RAG_Code_Base.Services.Vectorization;
 using RAG_Code_Base.Services.VectorStorage;
 using RAG_Code_Base.Services.ProjectGraph;
+using RAG_Code_Base.Services.Speech;
 using Hangfire;
 using Hangfire.PostgreSql;
 using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
@@ -57,6 +58,8 @@ builder.Services.AddScoped<DocxParser>();
 builder.Services.AddScoped<ParserFactory>();
 
 builder.Services.AddSingleton<VectorStorageService>();
+
+builder.Services.AddSingleton<SpeechService>();
 
 builder.Services.AddScoped<ProjectGraphService>();
 
