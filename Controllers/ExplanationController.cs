@@ -38,6 +38,35 @@ namespace RAG_Code_Base.Controllers
 
             return Ok(response);
         }
+        
+        [HttpPost("query/stream")]
+        public async Task StreamAnswer(
+            [FromBody] ExplanationRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(request.Question))
+            {
+                Response.StatusCode = 400;
+                await Response.WriteAsync("data: {\"error\": \"Вопрос не может быть пустым\"}\n\n", cancellationToken);
+                return;
+            }
+            
+            Response.Headers["Content-Type"] = "text/event-stream";
+            Response.Headers["Cache-Control"] = "no-cache";
+            Response.Headers["X-Accel-Buffering"] = "no";
+
+            await foreach (var token in _explanationService.ExplainStreamAsync(
+                               request.Question,
+                               request.TopK ?? 5,
+                               cancellationToken))
+            {
+                await Response.WriteAsync($"data: {token}\n\n", cancellationToken);
+                await Response.Body.FlushAsync(cancellationToken);
+            }
+
+            await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        }
     }
 
     public class ExplanationRequest

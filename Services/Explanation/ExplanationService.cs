@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using RAG_Code_Base.Models;
 using RAG_Code_Base.Services.Vectorization;
 using RAG_Code_Base.Services.VectorStorage;
+using System.Runtime.CompilerServices;
 
 namespace RAG_Code_Base.Services.Explanation
 {
@@ -33,7 +34,7 @@ namespace RAG_Code_Base.Services.Explanation
 
             try
             {
-                var modelPath = Path.Combine(Directory.GetCurrentDirectory(), "LM", "Qwen2.5-Coder-3B-Instruct-Q4_K_M.gguf");
+                var modelPath = Path.Combine(Directory.GetCurrentDirectory(), "LM", "gemma-3-it-1B-Q4_K_M.gguf");
 
                 _modelParams = new ModelParams(modelPath)
                 {
@@ -100,7 +101,11 @@ namespace RAG_Code_Base.Services.Explanation
                 }).ToList();
 
                 _logger?.LogInformation("Генерация ответа с помощью LLM...");
-                var answer = await ExplainInternalAsync(question, contexts, cancellationToken);
+                
+                var sb = new StringBuilder();
+                await foreach (var token in ExplainInternalAsync(question, contexts, cancellationToken))
+                    sb.Append(token);
+                var answer = sb.ToString().Trim();
 
                 _logger?.LogInformation("Ответ успешно сгенерирован");
 
@@ -132,64 +137,64 @@ namespace RAG_Code_Base.Services.Explanation
                 };
             }
         }
+        
+        public async IAsyncEnumerable<string> ExplainStreamAsync(
+            string question,
+            int topK = 5,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var questionEmbedding = await _vectorizationService.GenerateEmbeddingAsync(question, cancellationToken);
+        
+            var similarBlocks = (await _vectorStorageService.SearchSimilarBlocksAsync(questionEmbedding))
+                .Take(topK)
+                .ToList();
+        
+            var contexts = similarBlocks.Select(block =>
+            {
+                var location = $"[Файл: {block.FileName} | Строки: {block.StartLine}-{block.EndLine}]";
+                var content = block.Content.Length > 300 ? block.Content[..300] + "..." : block.Content;
+                return $"{location}\n\n{content}";
+            }).ToList();
+            
+            await foreach (var token in ExplainInternalAsync(question, contexts, cancellationToken))
+            {
+                yield return token;
+            }
+        }
 
-        private async Task<string> ExplainInternalAsync(
+        private async IAsyncEnumerable<string> ExplainInternalAsync(
             string question,
             List<string> contexts,
-            CancellationToken cancellationToken = default)
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            try
+            string contextBlock = contexts != null && contexts.Any()
+                ? string.Join("\n\n---\n\n", contexts.Where(c => !string.IsNullOrWhiteSpace(c)))
+                : "Контекст отсутствует.";
+
+            string prompt = $"""
+                             Ты — инженер-программист. Объясни код и технический текст простыми словами.
+                             Если данных недостаточно — честно скажи, что данных не хватает.
+
+                             Контекст из кодовой базы:
+                             {contextBlock}
+
+                             Вопрос пользователя:
+                             {question}
+
+                             Ответ:
+                             """;
+
+            var inferenceParams = new InferenceParams
             {
-                string contextBlock = contexts != null && contexts.Any()
-                    ? string.Join("\n\n---\n\n", contexts.Where(c => !string.IsNullOrWhiteSpace(c)))
-                    : "Контекст отсутствует.";
+                MaxTokens = 512,
+                AntiPrompts = new List<string> { "Вопрос пользователя:", "Контекст из кодовой базы:" }
+            };
 
-                string prompt = $"""
-                                 Ты — инженер-программист. Объясни код и технический текст простыми словами.
-                                 Если данных недостаточно — честно скажи, что данных не хватает.
+            var executor = new StatelessExecutor(_weights, _modelParams);
 
-                                 Контекст из кодовой базы:
-                                 {contextBlock}
-
-                                 Вопрос пользователя:
-                                 {question}
-
-                                 Ответ:
-                                 """;
-
-                var inferenceParams = new InferenceParams
-                {
-                    MaxTokens = 512,
-                    AntiPrompts = new List<string> { "Вопрос пользователя:", "Контекст из кодовой базы:" }
-                };
-
-                var executor = new StatelessExecutor(_weights, _modelParams);
-
-                var responseBuilder = new StringBuilder();
-                await foreach (var token in executor.InferAsync(prompt, inferenceParams, cancellationToken))
-                {
-                    responseBuilder.Append(token);
-                }
-
-                var result = responseBuilder.ToString().Trim();
-
-                if (string.IsNullOrWhiteSpace(result))
-                {
-                    _logger?.LogWarning("Модель вернула пустой ответ.");
-                    return "Модель не смогла сгенерировать ответ.";
-                }
-
-                return result;
-            }
-            catch (OperationCanceledException)
+            await foreach (var token in executor.InferAsync(prompt, inferenceParams, cancellationToken))
             {
-                _logger?.LogWarning("Генерация ответа была отменена пользователем.");
-                return "Генерация отменена.";
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Ошибка при генерации объяснения.");
-                return "Произошла ошибка при объяснении.";
+                yield return token;
             }
         }
 

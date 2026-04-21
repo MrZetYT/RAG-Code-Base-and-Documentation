@@ -121,8 +121,14 @@ app.UseHangfireDashboard("/hangfire");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}/openapi.json";
+    });
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1/openapi.json", "v1");
+    });
 }
 
 app.UseHttpsRedirection();
