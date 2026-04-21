@@ -4,6 +4,8 @@ using RAG_Code_Base.Services.DataLoader;
 using RAG_Code_Base.Services.Parsers;
 using RAG_Code_Base.Services.Vectorization;
 using RAG_Code_Base.Services.VectorStorage;
+using RAG_Code_Base.Services.ProjectGraph;
+using RAG_Code_Base.Services.Speech;
 using Hangfire;
 using Hangfire.PostgreSql;
 using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
@@ -12,7 +14,7 @@ using RAG_Code_Base.Services.Explanation;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddDbContext<ApplicationDbContext>(options=>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHangfire(configuration => configuration
@@ -55,9 +57,11 @@ builder.Services.AddScoped<DocxParser>();
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
 
-//именно так и никак иначе
 builder.Services.AddSingleton<VectorStorageService>();
 
+builder.Services.AddSingleton<SpeechService>();
+
+builder.Services.AddScoped<ProjectGraphService>();
 
 builder.Services.AddScoped<FileValidator>();
 
@@ -91,7 +95,6 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Добавляем CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
@@ -110,7 +113,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var vectorStorage = scope.ServiceProvider.GetRequiredService<VectorStorageService>();
-    // Сервис инициализируется здесь
 }
 
 
@@ -119,13 +121,18 @@ app.UseHangfireDashboard("/hangfire");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}/openapi.json";
+    });
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1/openapi.json", "v1");
+    });
 }
 
 app.UseHttpsRedirection();
 
-// Используем статические файлы (для Blazor)
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowBlazor");
