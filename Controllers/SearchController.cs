@@ -61,7 +61,7 @@ namespace RAG_Code_Base.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ошибка при поиске");
+                _logger.LogError(ex, " Ошибка при поиске");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
