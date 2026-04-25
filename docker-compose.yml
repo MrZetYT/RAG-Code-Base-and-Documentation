@@ -1,5 +1,4 @@
-version: '3.8'
-
+﻿version: '3.8'
 services:
   postgres:
     image: postgres:17
@@ -7,12 +6,20 @@ services:
     environment:
       POSTGRES_DB: raw_files
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_password_here
+      POSTGRES_PASSWORD: DevPass123!  # ← Явно задаём пароль
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d raw_files"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
+    networks:
+      - rag-network
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -22,8 +29,46 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:6333/readyz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
+    networks:
+      - rag-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag_api
+    ports:
+      - "5275:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=raw_files;Username=postgres;Password=DevPass123!;Trust Server Certificate=true
+      - Qdrant__Host=qdrant
+      - Qdrant__Port=6334
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./LM:/app/LM:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started 
+    restart: unless-stopped
+    networks:
+      - rag-network
 
 volumes:
   postgres_data:
   qdrant_storage:
+
+
+networks:
+  rag-network:
+    driver: bridge
+
+

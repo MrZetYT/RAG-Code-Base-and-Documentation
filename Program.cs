@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
 using RAG_Code_Base.Services.Parsers;
@@ -143,4 +143,24 @@ app.MapControllers();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await context.Database.MigrateAsync();
+        loggerFactory.CreateLogger<Program>().LogInformation("✅ EF Core migrations applied successfully");
+    }
+    catch (Exception ex)
+    {
+        var logger = loggerFactory.CreateLogger<Program>();
+        logger.LogError(ex, "❌ Error applying database migrations");
+    }
+}
+
+
 app.Run();
