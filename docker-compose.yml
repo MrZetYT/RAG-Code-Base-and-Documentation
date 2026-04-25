@@ -6,16 +6,17 @@ services:
     environment:
       POSTGRES_DB: raw_files
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_password_here
+      POSTGRES_PASSWORD: DevPass123!  # ← Явно задаём пароль
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d raw_files"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
     networks:
       - rag-network
@@ -29,7 +30,7 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:6333/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:6333/readyz || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,19 +47,17 @@ services:
     ports:
       - "5275:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=raw_files;Username=postgres;Password=your_password_here
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=raw_files;Username=postgres;Password=DevPass123!;Trust Server Certificate=true
       - Qdrant__Host=qdrant
       - Qdrant__Port=6334
       - ASPNETCORE_ENVIRONMENT=Development
-      - ApiBaseUrl=http://api:8080
-      - HealthChecks__QdrantUrl=http://qdrant:6333/health      
     volumes:
-      - ./LM:/app/LM:ro         
+      - ./LM:/app/LM:ro
     depends_on:
       postgres:
         condition: service_healthy
       qdrant:
-        condition: service_started
+        condition: service_started 
     restart: unless-stopped
     networks:
       - rag-network
@@ -67,6 +66,9 @@ volumes:
   postgres_data:
   qdrant_storage:
 
+
 networks:
   rag-network:
     driver: bridge
+
+

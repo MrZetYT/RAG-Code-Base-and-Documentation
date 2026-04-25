@@ -1,20 +1,20 @@
-﻿using Hangfire;
-using Hangfire.Dashboard;
-using Hangfire.PostgreSql;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RAG_Code_Base.Database;
 using RAG_Code_Base.Services.DataLoader;
-using RAG_Code_Base.Services.Explanation;
 using RAG_Code_Base.Services.Parsers;
-using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
 using RAG_Code_Base.Services.Vectorization;
 using RAG_Code_Base.Services.VectorStorage;
+using RAG_Code_Base.Services.ProjectGraph;
+using RAG_Code_Base.Services.Speech;
+using Hangfire;
+using Hangfire.PostgreSql;
+using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
+using RAG_Code_Base.Services.Explanation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddDbContext<ApplicationDbContext>(options=>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHangfire(configuration => configuration
@@ -25,7 +25,6 @@ builder.Services.AddHangfire(configuration => configuration
         c.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
 builder.Services.AddHangfireServer();
-
 
 builder.Services.AddScoped<FileLoaderService>();
 builder.Services.AddSingleton(sp =>
@@ -58,9 +57,11 @@ builder.Services.AddScoped<DocxParser>();
 // Add services to the container.
 builder.Services.AddScoped<ParserFactory>();
 
-//именно так и никак иначе
 builder.Services.AddSingleton<VectorStorageService>();
 
+builder.Services.AddSingleton<SpeechService>();
+
+builder.Services.AddScoped<ProjectGraphService>();
 
 builder.Services.AddScoped<FileValidator>();
 
@@ -69,20 +70,18 @@ builder.Services.AddSingleton<VectorizationService>();
 
 builder.Services.AddRazorPages();
 
+
 builder.Services.AddServerSideBlazor(options =>
 {
     options.DetailedErrors = true;
-    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
 });
-
 
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped(sp =>
 {
     var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-    var baseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5275";
-    client.BaseAddress = new Uri(baseUrl);
+    client.BaseAddress = new Uri("http://localhost:5275");
     return client;
 });
 
@@ -96,7 +95,6 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Добавляем CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
@@ -107,76 +105,36 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddHealthChecks()
-    .AddNpgSql(
-        builder.Configuration.GetConnectionString("DefaultConnection")!,
-        name: "postgresql")
-    .AddUrlGroup(
-    new Uri(builder.Configuration["HealthChecks:QdrantUrl"]
-        ?? "http://localhost:6333/health"),
-    name: "qdrant");
+
 
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
-
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        logger.LogInformation("Применение миграций базы данных...");
-        await context.Database.MigrateAsync();  // ← ЭТО СОЗДАСТ ТАБЛИЦЫ!
-        logger.LogInformation("Миграции успешно применены");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Ошибка при применении миграций");
-    }
-
-    var vectorStorage = services.GetRequiredService<VectorStorageService>();
+    var vectorStorage = scope.ServiceProvider.GetRequiredService<VectorStorageService>();
 }
 
 
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = Array.Empty<IDashboardAuthorizationFilter>()  // ← Разрешить все запросы
-});
+app.UseHangfireDashboard("/hangfire");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}/openapi.json";
+    });
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1/openapi.json", "v1");
+    });
 }
 
 app.UseHttpsRedirection();
 
-// Используем статические файлы (для Blazor)
 app.UseStaticFiles();
-
-
 app.UseRouting();
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        var result = System.Text.Json.JsonSerializer.Serialize(new
-        {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(e => new
-            {
-                name = e.Key,
-                status = e.Value.Status.ToString(),
-                duration = e.Value.Duration.TotalMilliseconds.ToString("F0") + "ms"
-            })
-        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        await context.Response.WriteAsync(result);
-    }
-});
 app.UseCors("AllowBlazor");
 
 app.UseAuthorization();
@@ -185,4 +143,24 @@ app.MapControllers();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await context.Database.MigrateAsync();
+        loggerFactory.CreateLogger<Program>().LogInformation("✅ EF Core migrations applied successfully");
+    }
+    catch (Exception ex)
+    {
+        var logger = loggerFactory.CreateLogger<Program>();
+        logger.LogError(ex, "❌ Error applying database migrations");
+    }
+}
+
+
 app.Run();
