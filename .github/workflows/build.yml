@@ -2,7 +2,7 @@
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, maxim/feature-base ]
   pull_request:
     branches: [ main ]
 
@@ -20,10 +20,10 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore RAG_Code_Base.csproj
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build RAG_Code_Base.csproj --no-restore --configuration Release
 
       - name: Docker Build
         run: docker build -t rag-api:latest .

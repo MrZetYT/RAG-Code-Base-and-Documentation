@@ -45,13 +45,11 @@
 	</ItemGroup>
 	<ItemGroup>
 		<!-- Windows -->
-		<None Update="$(UserProfile)\.nuget\packages\treesitter.bindings\*\runtimes\win-x64\native\tree-sitter.dll"
-			  Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+		<None Update="$(UserProfile)\.nuget\packages\treesitter.bindings\*\runtimes\win-x64\native\tree-sitter.dll" Condition="$([MSBuild]::IsOSPlatform('Windows'))">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<!-- Linux (для Docker) -->
-		<None Update="$(UserProfile)\.nuget\packages\treesitter.bindings\*\runtimes\linux-x64\native\libtree-sitter.so"
-			  Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+		<None Update="$(UserProfile)\.nuget\packages\treesitter.bindings\*\runtimes\linux-x64\native\libtree-sitter.so" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
@@ -59,5 +57,10 @@
 
 	<ItemGroup>
 		<None Include="Data\**" CopyToOutputDirectory="Never" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <None Include=".github\workflows\build.yml" />
 	</ItemGroup>
 </Project>
