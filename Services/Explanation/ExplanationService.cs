@@ -101,7 +101,7 @@ namespace RAG_Code_Base.Services.Explanation
                 }).ToList();
 
                 _logger?.LogInformation("Генерация ответа с помощью LLM...");
-                
+
                 var sb = new StringBuilder();
                 await foreach (var token in ExplainInternalAsync(question, contexts, cancellationToken))
                     sb.Append(token);
@@ -137,25 +137,25 @@ namespace RAG_Code_Base.Services.Explanation
                 };
             }
         }
-        
+
         public async IAsyncEnumerable<string> ExplainStreamAsync(
             string question,
             int topK = 5,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var questionEmbedding = await _vectorizationService.GenerateEmbeddingAsync(question, cancellationToken);
-        
+
             var similarBlocks = (await _vectorStorageService.SearchSimilarBlocksAsync(questionEmbedding))
                 .Take(topK)
                 .ToList();
-        
+
             var contexts = similarBlocks.Select(block =>
             {
                 var location = $"[Файл: {block.FileName} | Строки: {block.StartLine}-{block.EndLine}]";
                 var content = block.Content.Length > 300 ? block.Content[..300] + "..." : block.Content;
                 return $"{location}\n\n{content}";
             }).ToList();
-            
+
             await foreach (var token in ExplainInternalAsync(question, contexts, cancellationToken))
             {
                 yield return token;

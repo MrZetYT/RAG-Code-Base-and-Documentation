@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { fileApi } from '../api/fileApi';
 import './FileUpload.css';
+import FileList from './FileList';
 
 const FileUpload = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -26,15 +27,15 @@ const FileUpload = () => {
 
         try {
             const result = await fileApi.uploadFiles(selectedFiles);
-            setMessage(`✅ Успешно загружено ${result.length} файлов`);
+            setMessage(`✅ Успешно загружено ${result.length || selectedFiles.length} файлов`);
             setMessageType('success');
             setSelectedFiles([]);
             const fileInput = document.getElementById('file-input');
             if (fileInput) fileInput.value = '';
         } catch (error) {
-            setMessage(`✅ [ДЕМО] ${selectedFiles.length} файлов готовы к обработке. Для реальной работы запустите бэкенд.`);
-            setMessageType('success');
-            setSelectedFiles([]);
+            console.error('Upload error:', error);
+            setMessage(`❌ Ошибка загрузки: ${error.message}`);
+            setMessageType('error');
         } finally {
             setUploading(false);
         }
@@ -141,6 +142,9 @@ const FileUpload = () => {
                 </div>
                 <p className="note">⚠️ Максимальный размер файла: 50 MB</p>
             </div>
+
+            {/* 👇 ВОТ ЭТУ СТРОКУ НУЖНО ДОБАВИТЬ */}
+            <FileList />
         </div>
     );
 };

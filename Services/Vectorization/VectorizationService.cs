@@ -57,7 +57,9 @@ namespace RAG_Code_Base.Services.Vectorization
             }
             catch (Exception ex)
             {
+
                 _logger?.LogError(ex, "Ошибка при генерации эмбеддинга.");
+
                 return Array.Empty<float>();
             }
         }
