@@ -10,6 +10,8 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using RAG_Code_Base.Services.Parsers.TreeSitterParsers;
 using RAG_Code_Base.Services.Explanation;
+using Prometheus;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,7 +93,9 @@ builder.Services.AddScoped(sp =>
 
 builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -135,6 +139,11 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseHttpMetrics();
+app.MapMetrics("/metrics");
+
+
 app.UseCors("AllowBlazor");
 
 app.UseAuthorization();
