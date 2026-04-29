@@ -9,6 +9,7 @@ namespace RAG_Code_Base.Services.Vectorization
         private readonly LLamaWeights _weights;
         private readonly LLamaEmbedder _embedder;
         private readonly ILogger<VectorizationService>? _logger;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         public VectorizationService(ILogger<VectorizationService>? logger = null)
         {
@@ -31,6 +32,7 @@ namespace RAG_Code_Base.Services.Vectorization
 
         public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
         {
+            await _semaphore.WaitAsync(cancellationToken);
             try
             {
                 text = text
@@ -62,12 +64,17 @@ namespace RAG_Code_Base.Services.Vectorization
 
                 return Array.Empty<float>();
             }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public void Dispose()
         {
             _embedder.Dispose();
             _weights.Dispose();
+            _semaphore.Dispose();
         }
     }
 }

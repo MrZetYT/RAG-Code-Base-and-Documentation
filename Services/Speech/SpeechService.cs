@@ -1,5 +1,7 @@
 ﻿using Whisper.net;
 using System.Text;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace RAG_Code_Base.Services.Speech;
 
@@ -31,18 +33,31 @@ public class SpeechService : IDisposable
 
         try
         {
-            using (var fs = File.Create(tempInput))
+            await using (var fs = File.Create(tempInput))
                 await audio.CopyToAsync(fs);
 
-            using (var reader = new NAudio.Wave.WaveFileReader(tempInput))
+            using (var reader = new AudioFileReader(tempInput))
             {
-                var targetFormat = new NAudio.Wave.WaveFormat(16000, 16, 1);
-                using var resampler = new NAudio.Wave.MediaFoundationResampler(reader, targetFormat);
-                NAudio.Wave.WaveFileWriter.CreateWaveFile(tempOutput, resampler);
-            }
+                ISampleProvider sample = reader;
 
-            using var wavStream = File.OpenRead(tempOutput);
+                if (reader.WaveFormat.Channels == 2)
+                {
+                    sample = new StereoToMonoSampleProvider(sample)
+                    {
+                        LeftVolume = 0.5f,
+                        RightVolume = 0.5f
+                    };
+                }
+
+                sample = new WdlResamplingSampleProvider(sample, 16000);
+                
+                WaveFileWriter.CreateWaveFile16(tempOutput, sample);
+            }
+            
+            await using var wavStream = File.OpenRead(tempOutput);
+            
             var result = new StringBuilder();
+            
             await foreach (var segment in _processor.ProcessAsync(wavStream))
                 result.Append(segment.Text);
 
