@@ -50,11 +50,19 @@ const Chat = () => {
                 const result = await speechApi.recognizeSpeech(audioBlob);
                 const transcript = result.transcript;
                 if (transcript?.trim()) {
-                    setInput(transcript);
-                    handleSend(transcript);
+                    setInput(transcript);           
+                         
                 }
             } catch (error) {
-                console.error('Voice error:', error);
+                console.error('Voice recognition failed:', error);
+                const errorMsg = {
+                    id: Date.now(),
+                    type: 'assistant',
+                    content: `❌ Ошибка распознавания голоса: ${error.message}`,
+                    isError: true,
+                    timestamp: new Date(),
+                };
+                setMessages(prev => [...prev, errorMsg]);
             } finally {
                 setIsProcessingVoice(false);
             }
